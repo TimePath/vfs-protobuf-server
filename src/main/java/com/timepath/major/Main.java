@@ -1,5 +1,7 @@
 package com.timepath.major;
 
+import com.timepath.major.proto.Files.File;
+import com.timepath.major.proto.Files.FileListing;
 import com.timepath.major.vfs.DatabaseConnection;
 import com.timepath.major.vfs.SecurityAdapter;
 import com.timepath.major.vfs.SecurityController;
@@ -58,8 +60,8 @@ public class Main {
                 InputStream is = client.socket().getInputStream();
                 OutputStream os = client.socket().getOutputStream();
                 try {
-                    AddressBook addressBook = AddressBook.parseDelimitedFrom(is);
-                    Person p = addressBook.getPerson(0);
+                    FileListing fileListing = FileListing.parseDelimitedFrom(is);
+                    File p = fileListing.getFile(0);
                     LOG.log(Level.INFO, "Got {0}", p);
                     p.writeDelimitedTo(os);
                 } catch(IOException e) {
