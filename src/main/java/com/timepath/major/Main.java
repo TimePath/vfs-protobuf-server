@@ -11,7 +11,11 @@ import com.timepath.vfs.jdbc.JDBCFS;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -25,11 +29,15 @@ public class Main {
 
     private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Callback {}
+
     public static void main(String[] args) throws IOException {
         if(args.length == 0) args = new String[] { "jdbc:mysql://localhost/test" };
         if(args.length >= 2) {
             try {
-            Class.forName(args[1]);
+                Class.forName(args[1]);
             } catch(ClassNotFoundException e) {
                 LOG.log(Level.SEVERE, null, e);
             }
@@ -42,7 +50,7 @@ public class Main {
 
                 @Override
                 public InputStream openStream(final SimpleVFile file) {
-                    if (Math.round(Math.random()) == 1) {
+                    if(Math.round(Math.random()) == 1) {
                         return new ByteArrayInputStream("Go away".getBytes(StandardCharsets.UTF_8));
                     }
                     return super.openStream(file);
@@ -55,7 +63,7 @@ public class Main {
 
                 @Override
                 public SimpleVFile get(final SimpleVFile file) {
-                    LOG.log(Level.INFO, "{0} is accessing {1}", new Object[]{user, file});
+                    LOG.log(Level.INFO, "{0} is accessing {1}", new Object[] { user, file });
                     return file;
                 }
             }));
@@ -67,7 +75,7 @@ public class Main {
             {
                 LOG.log(Level.INFO, "Starting server on port {0}", port);
             }
-            
+
             ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 4);
 
             @Override
@@ -76,25 +84,45 @@ public class Main {
                     @Override
                     public void run() {
                         try {
-                            InputStream is = client.socket().getInputStream();
-                            OutputStream os = client.socket().getOutputStream();
-                            //System.out.println(new BufferedReader(new InputStreamReader(is)).readLine());
-                            int length = (is.read() << 8) | is.read();
-                            byte[] buf = new byte[length];
-                            int total = 0;
-                            int read = 0;
-                            while(total < length) {
-                                 total += is.read(buf, total, length - total);
+                            ProtoConnection c = new ProtoConnection(client.socket()) {
+                                private boolean isApplicable(Method method, Object o) {
+                                    if(method.getAnnotation(Callback.class) == null) return false;
+                                    Class[] c = method.getParameterTypes();
+                                    if(c.length > 1) return false;
+                                    return c[0].isInstance(o);
+                                }
+
+                                @Override
+                                void callback(Object o) {
+                                    if(o == null) throw new RuntimeException("Null callback object.");
+                                    Method m = null;
+                                    for(Method method : getClass().getDeclaredMethods()) {
+                                        if(isApplicable(method, o)) {
+                                            m = method;
+                                            break;
+                                        }
+                                    }
+                                    if(m == null) {
+                                        throw new RuntimeException("No callback for '" + o.getClass() + "'.");
+                                    }
+                                    try {
+                                        m.invoke(this, o);
+                                    } catch(Exception e) {
+                                        throw new RuntimeException("Callback failed for '" + o.getClass() + "'.", e);
+                                    }
+                                }
+
+                                @Callback
+                                void listing(FileListing l) throws IOException {
+                                    LOG.log(Level.INFO, "Got {0}", l);
+                                    write(l);
+                                }
+                            };
+                            while(true) {
+                                c.callback(c.read());
                             }
-                            FileListing fileListing = FileListing.parseFrom(new ByteArrayInputStream(buf, 0, total));
-                            LOG.log(Level.INFO, "Got {0}", fileListing);
-                            length = fileListing.getSerializedSize();
-                            os.write((length & 0xFF00) >> 8);
-                            os.write(length & 0xFF);
-                            fileListing.writeTo(os);
-                            System.out.println();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        } catch(Exception e) {
+                            LOG.log(Level.SEVERE, null, e);
                         }
                     }
                 });
