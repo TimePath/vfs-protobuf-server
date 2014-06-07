@@ -1,6 +1,6 @@
 package com.timepath.major;
 
-import com.timepath.major.proto.Files.FileListing;
+import com.timepath.major.proto.Messages.FileListing;
 import com.timepath.major.vfs.DatabaseConnection;
 import com.timepath.major.vfs.SecurityAdapter;
 import com.timepath.major.vfs.SecurityController;

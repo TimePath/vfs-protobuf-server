@@ -17,22 +17,25 @@ import java.util.logging.Logger;
 public abstract class AbstractServer {
 
     private static final Logger LOG = Logger.getLogger(AbstractServer.class.getName());
-    protected final int port;
+    protected int                 port;
+    private   ServerSocketChannel channel;
+    private   Selector            acceptSelector;
 
     public AbstractServer(int port) {
         this.port = port;
     }
 
+    public int getPort() {
+        return port;
+    }
+
     public void run() throws IOException {
-        ServerSocketChannel chan = ServerSocketChannel.open();
-        chan.configureBlocking(false);
-        Selector selector = Selector.open();
-        chan.bind(new InetSocketAddress(port));
-        chan.register(selector, SelectionKey.OP_ACCEPT);
+        if(channel == null) bind();
+        channel.register(acceptSelector, SelectionKey.OP_ACCEPT);
         while(true) {
             // Wait for events
-            selector.select();
-            Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+            acceptSelector.select();
+            Iterator<SelectionKey> keys = acceptSelector.selectedKeys().iterator();
             while(keys.hasNext()) {
                 SelectionKey key = keys.next();
                 keys.remove();
@@ -49,6 +52,14 @@ public abstract class AbstractServer {
                 }
             }
         }
+    }
+
+    public void bind() throws IOException {
+        channel = ServerSocketChannel.open();
+        channel.configureBlocking(false);
+        acceptSelector = Selector.open();
+        channel.bind(new InetSocketAddress(port));
+        port = channel.socket().getLocalPort();
     }
 
     private void accept(SelectionKey key) throws IOException {
