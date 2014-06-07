@@ -1,6 +1,7 @@
 package com.timepath.major;
 
 import com.timepath.major.proto.Messages.FileListing;
+import com.timepath.major.proto.Messages.Meta;
 import com.timepath.major.vfs.DatabaseConnection;
 import com.timepath.major.vfs.SecurityAdapter;
 import com.timepath.major.vfs.SecurityController;
@@ -79,7 +80,7 @@ public class Main {
                                 @Callback
                                 void listing(FileListing l) throws IOException {
                                     LOG.log(Level.INFO, "Got {0}", l);
-                                    write(l);
+                                    write(Meta.newBuilder().setFiles(l).build());
                                 }
                             };
                             while(true) {
