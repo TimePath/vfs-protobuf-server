@@ -11,11 +11,6 @@ import com.timepath.vfs.jdbc.JDBCFS;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -28,10 +23,6 @@ import java.util.logging.Logger;
 public class Main {
 
     private static final Logger LOG = Logger.getLogger(Main.class.getName());
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface Callback {}
 
     public static void main(String[] args) throws IOException {
         if(args.length == 0) args = new String[] { "jdbc:mysql://localhost/test" };
@@ -85,33 +76,6 @@ public class Main {
                     public void run() {
                         try {
                             ProtoConnection c = new ProtoConnection(client.socket()) {
-                                private boolean isApplicable(Method method, Object o) {
-                                    if(method.getAnnotation(Callback.class) == null) return false;
-                                    Class[] c = method.getParameterTypes();
-                                    if(c.length > 1) return false;
-                                    return c[0].isInstance(o);
-                                }
-
-                                @Override
-                                void callback(Object o) {
-                                    if(o == null) throw new RuntimeException("Null callback object.");
-                                    Method m = null;
-                                    for(Method method : getClass().getDeclaredMethods()) {
-                                        if(isApplicable(method, o)) {
-                                            m = method;
-                                            break;
-                                        }
-                                    }
-                                    if(m == null) {
-                                        throw new RuntimeException("No callback for '" + o.getClass() + "'.");
-                                    }
-                                    try {
-                                        m.invoke(this, o);
-                                    } catch(Exception e) {
-                                        throw new RuntimeException("Callback failed for '" + o.getClass() + "'.", e);
-                                    }
-                                }
-
                                 @Callback
                                 void listing(FileListing l) throws IOException {
                                     LOG.log(Level.INFO, "Got {0}", l);
@@ -119,7 +83,7 @@ public class Main {
                                 }
                             };
                             while(true) {
-                                c.callback(c.read());
+                                c.read();
                             }
                         } catch(Exception e) {
                             LOG.log(Level.SEVERE, null, e);
