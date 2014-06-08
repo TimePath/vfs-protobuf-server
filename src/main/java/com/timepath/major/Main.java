@@ -29,7 +29,7 @@ public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) throws IOException {
-        if(args.length == 0) args = new String[] { "jdbc:mysql://localhost/test" };
+        if(args.length == 0) args = new String[] { "jdbc:postgresql://localhost/" + System.getProperty("user.name") };
         if(args.length >= 2) {
             try {
                 Class.forName(args[1]);
