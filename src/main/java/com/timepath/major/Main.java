@@ -1,6 +1,9 @@
 package com.timepath.major;
 
 import com.timepath.major.proto.Messages.FileListing;
+import com.timepath.major.proto.Messages.FileListing.Builder;
+import com.timepath.major.proto.Messages.FileListing.File;
+import com.timepath.major.proto.Messages.ListRequest;
 import com.timepath.major.proto.Messages.Meta;
 import com.timepath.major.vfs.DatabaseConnection;
 import com.timepath.major.vfs.SecurityAdapter;
@@ -34,10 +37,11 @@ public class Main {
                 LOG.log(Level.SEVERE, null, e);
             }
         }
+        final JDBCFS[] jdbcfs = new JDBCFS[1];
         try {
-            final JDBCFS jdbcfs = new DatabaseConnection(args[0]);
+            jdbcfs[0] = new DatabaseConnection(args[0]);
             FTPFS ftp = new FTPFS();
-            ftp.add(new SecurityAdapter(jdbcfs, new SecurityController() {
+            ftp.add(new SecurityAdapter(jdbcfs[0], new SecurityController() {
                 String user = System.getProperty("user.name");
 
                 @Override
@@ -78,9 +82,14 @@ public class Main {
                         try {
                             ProtoConnection c = new ProtoConnection(client.socket()) {
                                 @Callback
-                                void listing(FileListing l) throws IOException {
+                                void listing(ListRequest l) throws IOException {
                                     LOG.log(Level.INFO, "Got {0}", l);
-                                    write(Meta.newBuilder().setFiles(l).build());
+                                    Builder files = FileListing.newBuilder();
+                                    Collection<? extends SimpleVFile> found = jdbcfs[0].query(l.getPath()).list();
+                                    for(SimpleVFile file : found) {
+                                         files.addFile(File.newBuilder().setName(file.getName()).build());
+                                    }
+                                    write(Meta.newBuilder().setFiles(files.build()).build());
                                 }
                             };
                             while(true) {
