@@ -92,8 +92,8 @@ public class Main {
                                     write(Meta.newBuilder().setFiles(files.build()).build());
                                 }
                             };
-                            while(true) {
-                                c.read();
+                            for(Meta m; (m = c.read()) != null;) {
+                                c.callback(m);
                             }
                         } catch(Exception e) {
                             LOG.log(Level.SEVERE, null, e);
