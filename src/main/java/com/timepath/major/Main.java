@@ -82,17 +82,22 @@ public class Main {
                         try {
                             ProtoConnection c = new ProtoConnection(client.socket()) {
                                 @Callback
-                                void listing(ListRequest l) throws IOException {
+                                void listing(Integer seq, Meta.Builder response) {}
+
+                                @Callback
+                                void listing(ListRequest l, Meta.Builder response) {
                                     LOG.log(Level.INFO, "Got {0}", l);
                                     Builder files = FileListing.newBuilder();
-                                    Collection<? extends SimpleVFile> found = jdbcfs[0].query(l.getPath()).list();
-                                    for(SimpleVFile file : found) {
-                                         files.addFile(File.newBuilder().setName(file.getName()).build());
+                                    SimpleVFile found = jdbcfs[0].query(l.getPath());
+                                    if(found != null) {
+                                        for(SimpleVFile file : found.list()) {
+                                            files.addFile(File.newBuilder().setName(file.getName()).build());
+                                        }
                                     }
-                                    write(Meta.newBuilder().setFiles(files.build()).build());
+                                    response.setFiles(files.build());
                                 }
                             };
-                            for(Meta m; (m = c.read()) != null;) {
+                            for(Meta m; ( m = c.read() ) != null; ) {
                                 c.callback(m);
                             }
                         } catch(Exception e) {
