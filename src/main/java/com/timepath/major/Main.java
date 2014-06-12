@@ -87,6 +87,7 @@ public class Main {
                                                .setName(file.getName())
                                                .setType(file.isDirectory() ? FileType.DIRECTORY : FileType.FILE)
                                                .setLastModified(file.lastModified())
+                                               .setSize(file.length())
                                                .build();
                                 }
 
@@ -119,8 +120,17 @@ public class Main {
                                     LOG.log(Level.INFO, "Chunk {0}", cr);
                                     FileChunk.Builder chunk = FileChunk.newBuilder();
                                     SimpleVFile found = jdbcfs[0].query(cr.getPath());
+data:
                                     if(found != null) {
-                                        chunk.setData(ByteString.copyFrom(new byte[] { 29 }));
+                                        try(InputStream is = found.openStream()) {
+                                            if(is == null) break data;
+                                            is.skip(cr.getOffset());
+                                            byte[] b = new byte[(int) Math.min(cr.getLength(), found.length())];
+                                            int total = is.read(b, 0, b.length);
+                                            if(total >= 0) chunk.setData(ByteString.copyFrom(b, 0, total));
+                                        } catch(IOException e) {
+                                            LOG.log(Level.SEVERE, null, e);
+                                        }
                                     }
                                     response.setChunk(chunk);
                                 }
