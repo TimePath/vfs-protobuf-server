@@ -1,9 +1,9 @@
 package com.timepath.major;
 
 import com.google.protobuf.MessageLite;
-import com.timepath.major.proto.Messages.FileListing;
-import com.timepath.major.proto.Messages.FileListing.File;
-import com.timepath.major.proto.Messages.FileListing.File.FileType;
+import com.timepath.major.proto.Messages.File;
+import com.timepath.major.proto.Messages.File.FileType;
+import com.timepath.major.proto.Messages.ListResponse;
 import com.timepath.major.proto.Messages.Meta;
 
 import java.io.IOException;
@@ -47,18 +47,17 @@ public class ProtocolTest {
         }).start();
         ProtoConnection c = new ProtoConnection(new Socket("127.0.0.1", server.getPort())) {
             @Callback
-            void listing(FileListing l) throws IOException {
+            void listing(ListResponse l) throws IOException {
                 LOG.log(Level.INFO, "Got {0}", l);
             }
         };
         Meta m = Meta.newBuilder()
-                     .setFiles(FileListing.newBuilder()
-                                          .addFile(File.newBuilder()
-                                                       .setName("text.txt")
-                                                       .setBody("text")
-                                                       .setType(FileType.FILE)
-                                                       .build())
-                                          .build())
+                     .setFiles(ListResponse.newBuilder()
+                                           .addFile(File.newBuilder()
+                                                        .setName("text.txt")
+                                                        .setType(FileType.FILE)
+                                                        .build())
+                                           .build())
                      .build();
         c.write(m);
     }

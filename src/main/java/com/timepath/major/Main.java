@@ -1,10 +1,7 @@
 package com.timepath.major;
 
-import com.timepath.major.proto.Messages.FileListing;
-import com.timepath.major.proto.Messages.FileListing.Builder;
-import com.timepath.major.proto.Messages.FileListing.File;
-import com.timepath.major.proto.Messages.ListRequest;
-import com.timepath.major.proto.Messages.Meta;
+import com.timepath.major.proto.Messages.*;
+import com.timepath.major.proto.Messages.File.FileType;
 import com.timepath.major.vfs.DatabaseConnection;
 import com.timepath.major.vfs.SecurityAdapter;
 import com.timepath.major.vfs.SecurityController;
@@ -82,19 +79,38 @@ public class Main {
                         try {
                             ProtoConnection c = new ProtoConnection(client.socket()) {
                                 @Callback
-                                void listing(Integer seq, Meta.Builder response) {}
+                                void ignore(Integer seq, Meta.Builder response) {}
+
+                                File wrap(SimpleVFile file) {
+                                    return File.newBuilder()
+                                               .setName(file.getName())
+                                               .setType(file.isDirectory() ? FileType.DIRECTORY : FileType.FILE)
+                                               .setLastModified(file.lastModified())
+                                               .build();
+                                }
 
                                 @Callback
-                                void listing(ListRequest l, Meta.Builder response) {
-                                    LOG.log(Level.INFO, "Got {0}", l);
-                                    Builder files = FileListing.newBuilder();
+                                void list(ListRequest l, Meta.Builder response) {
+                                    LOG.log(Level.INFO, "List {0}", l);
+                                    ListResponse.Builder list = ListResponse.newBuilder();
                                     SimpleVFile found = jdbcfs[0].query(l.getPath());
                                     if(found != null) {
                                         for(SimpleVFile file : found.list()) {
-                                            files.addFile(File.newBuilder().setName(file.getName()).build());
+                                            list.addFile(wrap(file));
                                         }
                                     }
-                                    response.setFiles(files.build());
+                                    response.setFiles(list.build());
+                                }
+
+                                @Callback
+                                void info(InfoRequest l, Meta.Builder response) {
+                                    LOG.log(Level.INFO, "Info {0}", l);
+                                    InfoResponse.Builder info = InfoResponse.newBuilder();
+                                    SimpleVFile found = jdbcfs[0].query(l.getPath());
+                                    if(found != null) {
+                                        info.setFile(wrap(found));
+                                    }
+                                    response.setFileInfo(info.build());
                                 }
                             };
                             for(Meta m; ( m = c.read() ) != null; ) {
