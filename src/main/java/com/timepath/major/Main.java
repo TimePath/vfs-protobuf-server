@@ -1,5 +1,6 @@
 package com.timepath.major;
 
+import com.google.protobuf.ByteString;
 import com.timepath.major.proto.Messages.*;
 import com.timepath.major.proto.Messages.File.FileType;
 import com.timepath.major.vfs.DatabaseConnection;
@@ -90,10 +91,10 @@ public class Main {
                                 }
 
                                 @Callback
-                                void list(ListRequest l, Meta.Builder response) {
-                                    LOG.log(Level.INFO, "List {0}", l);
+                                void list(ListRequest lr, Meta.Builder response) {
+                                    LOG.log(Level.INFO, "List {0}", lr);
                                     ListResponse.Builder list = ListResponse.newBuilder();
-                                    SimpleVFile found = jdbcfs[0].query(l.getPath());
+                                    SimpleVFile found = jdbcfs[0].query(lr.getPath());
                                     if(found != null) {
                                         for(SimpleVFile file : found.list()) {
                                             list.addFile(wrap(file));
@@ -103,14 +104,25 @@ public class Main {
                                 }
 
                                 @Callback
-                                void info(InfoRequest l, Meta.Builder response) {
-                                    LOG.log(Level.INFO, "Info {0}", l);
+                                void info(InfoRequest ir, Meta.Builder response) {
+                                    LOG.log(Level.INFO, "Info {0}", ir);
                                     InfoResponse.Builder info = InfoResponse.newBuilder();
-                                    SimpleVFile found = jdbcfs[0].query(l.getPath());
+                                    SimpleVFile found = jdbcfs[0].query(ir.getPath());
                                     if(found != null) {
                                         info.setFile(wrap(found));
                                     }
                                     response.setFileInfo(info.build());
+                                }
+
+                                @Callback
+                                void request(ChunkRequest cr, Meta.Builder response) {
+                                    LOG.log(Level.INFO, "Chunk {0}", cr);
+                                    FileChunk.Builder chunk = FileChunk.newBuilder();
+                                    SimpleVFile found = jdbcfs[0].query(cr.getPath());
+                                    if(found != null) {
+                                        chunk.setData(ByteString.copyFrom(new byte[] { 29 }));
+                                    }
+                                    response.setChunk(chunk);
                                 }
                             };
                             for(Meta m; ( m = c.read() ) != null; ) {
