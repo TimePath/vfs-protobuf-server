@@ -12,6 +12,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * A simple NIO socket selecting server. Only role is to accept connections
+ * <p/>
+ * Invoke {@link #run()} to start listening
+ *
  * @author TimePath
  */
 public abstract class AbstractServer {
@@ -25,10 +29,18 @@ public abstract class AbstractServer {
         this.port = port;
     }
 
+    /**
+     * @return The port this instance is listening on. Never 0
+     */
     public int getPort() {
         return port;
     }
 
+    /**
+     * Starts listening for connections. Will call {@link #bind()} if not already bound.
+     *
+     * @throws IOException
+     */
     public void run() throws IOException {
         if(channel == null) bind();
         channel.register(acceptSelector, SelectionKey.OP_ACCEPT);
@@ -54,6 +66,12 @@ public abstract class AbstractServer {
         }
     }
 
+    /**
+     * Attempt to bind to the requested port
+     *
+     * @throws IOException
+     *         If binding fails
+     */
     public void bind() throws IOException {
         channel = ServerSocketChannel.open();
         channel.configureBlocking(false);
@@ -71,5 +89,13 @@ public abstract class AbstractServer {
         connected(client);
     }
 
+    /**
+     * Called in response to a connection accepted
+     *
+     * @param client
+     *         The connection
+     *
+     * @throws IOException
+     */
     abstract void connected(SocketChannel client) throws IOException;
 }
