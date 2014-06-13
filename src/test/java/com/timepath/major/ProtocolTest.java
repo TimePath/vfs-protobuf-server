@@ -1,16 +1,18 @@
 package com.timepath.major;
 
-import com.google.protobuf.MessageLite;
 import com.timepath.major.proto.Messages.File;
 import com.timepath.major.proto.Messages.File.FileType;
 import com.timepath.major.proto.Messages.ListResponse;
 import com.timepath.major.proto.Messages.Meta;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.fail;
 
 /**
  * @author TimePath
@@ -19,19 +21,24 @@ public class ProtocolTest {
 
     private static final Logger LOG = Logger.getLogger(ProtocolTest.class.getName());
 
-    public static void main(String[] args) throws IOException {
+    @Test
+    public void communication() throws IOException, InterruptedException {
         final AbstractServer server = new AbstractServer(0) {
             @Override
-            void connected(final SocketChannel client) throws IOException {
-                ProtoConnection c = new ProtoConnection(client.socket()) {
+            void connected(final SocketChannel clientChannel) throws IOException {
+                ProtoConnection client = new ProtoConnection(clientChannel.socket()) {
                     @Callback
-                    void listing(MessageLite l) throws IOException {
-                        LOG.log(Level.INFO, "Got {0}", l);
-                        write(l);
+                    void listing(ListResponse l, Meta.Builder response) throws IOException {
+                        LOG.log(Level.INFO, "Server got {0}", l);
+                        response.setFiles(ListResponse.newBuilder()
+                                                      .addFile(File.newBuilder()
+                                                                   .setName("text.txt")
+                                                                   .setType(FileType.FILE)
+                                                                   .build())
+                                                      .build());
                     }
                 };
-                c.read();
-                client.close();
+                client.callback(client.read());
             }
         };
         server.bind();
@@ -45,20 +52,36 @@ public class ProtocolTest {
                 }
             }
         }).start();
-        ProtoConnection c = new ProtoConnection(new Socket("127.0.0.1", server.getPort())) {
+        final Object done = new Object();
+        final ProtoConnection c = new ProtoConnection(new Socket("localhost", server.getPort())) {
             @Callback
-            void listing(ListResponse l) throws IOException {
-                LOG.log(Level.INFO, "Got {0}", l);
+            void listing(ListResponse l, Meta.Builder response) throws IOException {
+                LOG.log(Level.INFO, "Client got {0}", l);
+                synchronized(done) {
+                    done.notify();
+                }
             }
         };
-        Meta m = Meta.newBuilder()
-                     .setFiles(ListResponse.newBuilder()
-                                           .addFile(File.newBuilder()
-                                                        .setName("text.txt")
-                                                        .setType(FileType.FILE)
-                                                        .build())
-                                           .build())
-                     .build();
-        c.write(m);
+        c.write(Meta.newBuilder()
+                    .setTag((int) System.currentTimeMillis())
+                    .setFiles(ListResponse.newBuilder()
+                                          .addFile(File.newBuilder().setName("text.txt").setType(FileType.FILE).build())
+                                          .build())
+                    .build());
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    for(Meta m; ( m = c.read() ) != null; ) {
+                        c.callback(m);
+                    }
+                } catch(IOException e) {
+                    fail(e.getMessage());
+                }
+            }
+        }.start();
+        synchronized(done) {
+            done.wait();
+        }
     }
 }
