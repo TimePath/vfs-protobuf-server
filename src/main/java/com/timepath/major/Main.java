@@ -79,9 +79,6 @@ public class Main {
                     public void run() {
                         try {
                             ProtoConnection c = new ProtoConnection(client.socket()) {
-                                @Callback
-                                void ignore(Integer seq, Meta.Builder response) {}
-
                                 File wrap(SimpleVFile file) {
                                     return File.newBuilder()
                                                .setName(file.getName())

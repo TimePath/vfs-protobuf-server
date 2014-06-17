@@ -44,6 +44,7 @@ public abstract class AbstractServer {
     public void run() throws IOException {
         if(channel == null) bind();
         channel.register(acceptSelector, SelectionKey.OP_ACCEPT);
+        //noinspection InfiniteLoopStatement
         while(true) {
             // Wait for events
             acceptSelector.select();
