@@ -38,7 +38,7 @@ public class ProtocolTest {
                                                       .build());
                     }
                 };
-                client.callback(client.read());
+                client.receive(client.read());
             }
         };
         server.bind();
@@ -73,7 +73,7 @@ public class ProtocolTest {
             public void run() {
                 try {
                     for(Meta m; ( m = c.read() ) != null; ) {
-                        c.callback(m);
+                        c.receive(m);
                     }
                 } catch(IOException e) {
                     fail(e.getMessage());

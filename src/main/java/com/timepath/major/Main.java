@@ -132,7 +132,7 @@ data:
                                     response.setChunk(chunk);
                                 }
                             };
-                            c.loop();
+                            c.readLoop();
                         } catch(Exception e) {
                             LOG.log(Level.SEVERE, null, e);
                         }

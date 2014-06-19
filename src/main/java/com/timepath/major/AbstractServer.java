@@ -30,7 +30,7 @@ public abstract class AbstractServer {
     }
 
     /**
-     * @return The port this instance is listening on. Never 0
+     * @return the port this instance is listening on. Never 0
      */
     public int getPort() {
         return port;
@@ -71,7 +71,7 @@ public abstract class AbstractServer {
      * Attempt to bind to the requested port
      *
      * @throws IOException
-     *         If binding fails
+     *         if binding fails
      */
     public void bind() throws IOException {
         channel = ServerSocketChannel.open();
@@ -94,7 +94,7 @@ public abstract class AbstractServer {
      * Called in response to a connection accepted
      *
      * @param client
-     *         The connection
+     *         the connection
      *
      * @throws IOException
      */
