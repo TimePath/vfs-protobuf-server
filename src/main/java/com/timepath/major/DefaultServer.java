@@ -3,7 +3,6 @@ package com.timepath.major;
 import com.google.protobuf.ByteString;
 import com.timepath.major.proto.Messages;
 import com.timepath.vfs.SimpleVFile;
-import com.timepath.vfs.jdbc.JDBCFS;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -31,11 +31,11 @@ public class ProtocolTest {
                     void listing(ListResponse l, Meta.Builder response) throws IOException {
                         LOG.log(Level.INFO, "Server got {0}", l);
                         response.setFiles(ListResponse.newBuilder()
-                                                      .addFile(File.newBuilder()
-                                                                   .setName("text.txt")
-                                                                   .setType(FileType.FILE)
-                                                                   .build())
-                                                      .build());
+                                .addFile(File.newBuilder()
+                                        .setName("text.txt")
+                                        .setType(FileType.FILE)
+                                        .build())
+                                .build());
                     }
                 };
                 client.receive(client.read());
@@ -47,7 +47,7 @@ public class ProtocolTest {
             public void run() {
                 try {
                     server.run();
-                } catch(IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -57,30 +57,30 @@ public class ProtocolTest {
             @Callback
             void listing(ListResponse l, Meta.Builder response) throws IOException {
                 LOG.log(Level.INFO, "Client got {0}", l);
-                synchronized(done) {
+                synchronized (done) {
                     done.notify();
                 }
             }
         };
         c.write(Meta.newBuilder()
-                    .setTag((int) System.currentTimeMillis())
-                    .setFiles(ListResponse.newBuilder()
-                                          .addFile(File.newBuilder().setName("text.txt").setType(FileType.FILE).build())
-                                          .build())
-                    .build());
+                .setTag((int) System.currentTimeMillis())
+                .setFiles(ListResponse.newBuilder()
+                        .addFile(File.newBuilder().setName("text.txt").setType(FileType.FILE).build())
+                        .build())
+                .build());
         new Thread() {
             @Override
             public void run() {
                 try {
-                    for(Meta m; ( m = c.read() ) != null; ) {
+                    for (Meta m; (m = c.read()) != null; ) {
                         c.receive(m);
                     }
-                } catch(IOException e) {
+                } catch (IOException e) {
                     fail(e.getMessage());
                 }
             }
         }.start();
-        synchronized(done) {
+        synchronized (done) {
             done.wait();
         }
     }

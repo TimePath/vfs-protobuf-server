@@ -21,9 +21,9 @@ import java.util.logging.Logger;
 public abstract class AbstractServer {
 
     private static final Logger LOG = Logger.getLogger(AbstractServer.class.getName());
-    protected int                 port;
-    private   ServerSocketChannel channel;
-    private   Selector            acceptSelector;
+    protected int port;
+    private ServerSocketChannel channel;
+    private Selector acceptSelector;
 
     public AbstractServer(int port) {
         this.port = port;
@@ -42,25 +42,25 @@ public abstract class AbstractServer {
      * @throws IOException
      */
     public void run() throws IOException {
-        if(channel == null) bind();
+        if (channel == null) bind();
         channel.register(acceptSelector, SelectionKey.OP_ACCEPT);
         //noinspection InfiniteLoopStatement
-        while(true) {
+        while (true) {
             // Wait for events
             acceptSelector.select();
             Iterator<SelectionKey> keys = acceptSelector.selectedKeys().iterator();
-            while(keys.hasNext()) {
+            while (keys.hasNext()) {
                 SelectionKey key = keys.next();
                 keys.remove();
-                if(!key.isValid()) {
+                if (!key.isValid()) {
                     continue;
                 }
                 try {
                     // One phase per iteration, defer others
-                    if(key.isAcceptable()) {
+                    if (key.isAcceptable()) {
                         accept(key);
                     }
-                } catch(Throwable t) { // This is fatal
+                } catch (Throwable t) { // This is fatal
                     LOG.log(Level.SEVERE, null, t);
                 }
             }
@@ -70,8 +70,7 @@ public abstract class AbstractServer {
     /**
      * Attempt to bind to the requested port
      *
-     * @throws IOException
-     *         if binding fails
+     * @throws IOException if binding fails
      */
     public void bind() throws IOException {
         channel = ServerSocketChannel.open();
@@ -93,9 +92,7 @@ public abstract class AbstractServer {
     /**
      * Called in response to a connection accepted
      *
-     * @param client
-     *         the connection
-     *
+     * @param client the connection
      * @throws IOException
      */
     abstract void connected(SocketChannel client) throws IOException;
