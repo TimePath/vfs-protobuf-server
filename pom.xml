@@ -8,7 +8,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>vfs-server-protobuf</artifactId>
+    <artifactId>vfs-protobuf-server</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
@@ -19,7 +19,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>vfs-client-protobuf</artifactId>
+            <artifactId>vfs-protobuf-client</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
