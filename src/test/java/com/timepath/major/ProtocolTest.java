@@ -4,6 +4,7 @@ import com.timepath.major.proto.Messages.File;
 import com.timepath.major.proto.Messages.File.FileType;
 import com.timepath.major.proto.Messages.ListResponse;
 import com.timepath.major.proto.Messages.Meta;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -23,12 +24,12 @@ public class ProtocolTest {
 
     @Test
     public void communication() throws IOException, InterruptedException {
-        final AbstractServer server = new AbstractServer(0) {
+        @NotNull final AbstractServer server = new AbstractServer(0) {
             @Override
-            void connected(final SocketChannel clientChannel) throws IOException {
-                ProtoConnection client = new ProtoConnection(clientChannel.socket()) {
+            void connected(@NotNull final SocketChannel clientChannel) throws IOException {
+                @NotNull ProtoConnection client = new ProtoConnection(clientChannel.socket()) {
                     @Callback
-                    void listing(ListResponse l, Meta.Builder response) throws IOException {
+                    void listing(ListResponse l, @NotNull Meta.Builder response) throws IOException {
                         LOG.log(Level.INFO, "Server got {0}", l);
                         response.setFiles(ListResponse.newBuilder()
                                 .addFile(File.newBuilder()
@@ -52,8 +53,8 @@ public class ProtocolTest {
                 }
             }
         }).start();
-        final Object done = new Object();
-        final ProtoConnection c = new ProtoConnection(new Socket("localhost", server.getPort())) {
+        @NotNull final Object done = new Object();
+        @NotNull final ProtoConnection c = new ProtoConnection(new Socket("localhost", server.getPort())) {
             @Callback
             void listing(ListResponse l, Meta.Builder response) throws IOException {
                 LOG.log(Level.INFO, "Client got {0}", l);

@@ -1,5 +1,7 @@
 package com.timepath.major;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
@@ -48,7 +50,7 @@ public abstract class AbstractServer {
         while (true) {
             // Wait for events
             acceptSelector.select();
-            Iterator<SelectionKey> keys = acceptSelector.selectedKeys().iterator();
+            @NotNull Iterator<SelectionKey> keys = acceptSelector.selectedKeys().iterator();
             while (keys.hasNext()) {
                 SelectionKey key = keys.next();
                 keys.remove();
@@ -80,8 +82,8 @@ public abstract class AbstractServer {
         port = channel.socket().getLocalPort();
     }
 
-    private void accept(SelectionKey key) throws IOException {
-        ServerSocketChannel server = (ServerSocketChannel) key.channel();
+    private void accept(@NotNull SelectionKey key) throws IOException {
+        @NotNull ServerSocketChannel server = (ServerSocketChannel) key.channel();
         SocketChannel client = server.accept();
         client.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
         client.setOption(StandardSocketOptions.TCP_NODELAY, true);

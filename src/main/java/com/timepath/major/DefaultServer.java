@@ -3,6 +3,8 @@ package com.timepath.major;
 import com.google.protobuf.ByteString;
 import com.timepath.major.proto.Messages;
 import com.timepath.vfs.SimpleVFile;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,13 +32,13 @@ public class DefaultServer extends AbstractServer {
     }
 
     @Override
-    void connected(final SocketChannel client) {
+    void connected(@NotNull final SocketChannel client) {
         pool.submit(new Runnable() {
             @Override
             public void run() {
                 try {
-                    ProtoConnection c = new ProtoConnection(client.socket()) {
-                        Messages.File wrap(SimpleVFile file) {
+                    @NotNull ProtoConnection c = new ProtoConnection(client.socket()) {
+                        Messages.File wrap(@NotNull SimpleVFile file) {
                             return Messages.File.newBuilder()
                                     .setName(file.getName())
                                     .setType(file.isDirectory() ? Messages.File.FileType.DIRECTORY : Messages.File.FileType.FILE)
@@ -46,12 +48,12 @@ public class DefaultServer extends AbstractServer {
                         }
 
                         @Callback
-                        void list(Messages.ListRequest lr, Messages.Meta.Builder response) {
+                        void list(@NotNull Messages.ListRequest lr, @NotNull Messages.Meta.Builder response) {
                             LOG.log(Level.INFO, "List {0}", lr);
                             Messages.ListResponse.Builder list = Messages.ListResponse.newBuilder();
-                            SimpleVFile found = vfs.query(lr.getPath());
+                            @Nullable SimpleVFile found = vfs.query(lr.getPath());
                             if (found != null) {
-                                for (SimpleVFile file : found.list()) {
+                                for (@NotNull SimpleVFile file : found.list()) {
                                     list.addFile(wrap(file));
                                 }
                             }
@@ -59,10 +61,10 @@ public class DefaultServer extends AbstractServer {
                         }
 
                         @Callback
-                        void info(Messages.InfoRequest ir, Messages.Meta.Builder response) {
+                        void info(@NotNull Messages.InfoRequest ir, @NotNull Messages.Meta.Builder response) {
                             LOG.log(Level.INFO, "Info {0}", ir);
                             Messages.InfoResponse.Builder info = Messages.InfoResponse.newBuilder();
-                            SimpleVFile found = vfs.query(ir.getPath());
+                            @Nullable SimpleVFile found = vfs.query(ir.getPath());
                             if (found != null) {
                                 info.setFile(wrap(found));
                             }
@@ -70,16 +72,16 @@ public class DefaultServer extends AbstractServer {
                         }
 
                         @Callback
-                        void request(Messages.ChunkRequest cr, Messages.Meta.Builder response) {
+                        void request(@NotNull Messages.ChunkRequest cr, @NotNull Messages.Meta.Builder response) {
                             LOG.log(Level.INFO, "Chunk {0}", cr);
                             Messages.FileChunk.Builder chunk = Messages.FileChunk.newBuilder();
-                            SimpleVFile found = vfs.query(cr.getPath());
+                            @Nullable SimpleVFile found = vfs.query(cr.getPath());
                             data:
                             if (found != null) {
-                                try (InputStream is = found.openStream()) {
+                                try (@Nullable InputStream is = found.openStream()) {
                                     if (is == null) break data;
                                     is.skip(cr.getOffset());
-                                    byte[] b = new byte[(int) Math.min(cr.getLength(), found.length())];
+                                    @NotNull byte[] b = new byte[(int) Math.min(cr.getLength(), found.length())];
                                     int total = is.read(b, 0, b.length);
                                     if (total >= 0) chunk.setData(ByteString.copyFrom(b, 0, total));
                                 } catch (IOException e) {
